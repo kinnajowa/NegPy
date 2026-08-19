@@ -255,7 +255,7 @@ def package_linux():
     shutil.copy("media/icons/icon.svg", os.path.join(hicolor_scalable, "negpy.svg"))
     hicolor_48 = os.path.join(appdir, "usr", "share", "icons", "hicolor", "48x48", "apps")
     os.makedirs(hicolor_48, exist_ok=True)
-    shutil.copy("media/icons/icon48x48.png", os.path.join(hicolor_48, "negpy.png"))
+    shutil.copy("media/icons/48x48.png", os.path.join(hicolor_48, "negpy.png"))
     # also install desktop file into /usr/share/applications
     applications_dir = os.path.join(appdir, "usr", "share", "applications")
     os.makedirs(applications_dir, exist_ok=True)
