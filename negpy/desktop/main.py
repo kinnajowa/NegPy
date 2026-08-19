@@ -247,6 +247,7 @@ def main() -> None:
         qInstallMessageHandler(_filter_qt_messages)
         app = QApplication(sys.argv)
         app.setApplicationName("NegPy")
+        app.setDesktopFileName("negpy")
         app.setStyle(_AppStyle("Fusion"))
 
         icon_path = get_resource_path("media/icons/icon.png")

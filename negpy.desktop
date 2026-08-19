@@ -2,6 +2,7 @@
 Name=NegPy
 Exec=NegPy
 Icon=negpy
+StartupWMClass=negpy
 Type=Application
 Categories=Graphics;Photography;
 Comment=Film Negative Editor
