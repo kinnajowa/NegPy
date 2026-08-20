@@ -197,9 +197,13 @@ class ActionToolbar(QWidget):
         self.btn_zoom_fit.setToolTip(tooltip_with_shortcut("Fit to Window", "fit_view"))
         self.btn_zoom_original = QToolButton()
         self.btn_zoom_original.setText("1:1")
+        # Checked state is a readout of the current zoom, not a mode the click toggles:
+        # _on_zoom_changed owns it, and every zoom path emits that signal.
+        self.btn_zoom_original.setCheckable(True)
         self.btn_zoom_original.setToolTip(
             tooltip_with_shortcut(
-                "Original size (100%). Displays a lower-resolution preview unless HQ is enabled.",
+                "Original size (100%) — one scan pixel per screen pixel. Below HQ the preview is scaled up to it, "
+                "so the framing is right and the detail is not.",
                 "zoom_100",
             )
         )
@@ -310,9 +314,11 @@ class ActionToolbar(QWidget):
         self._ov_fit_action = overflow_menu.addAction(qta.icon("fa5s.expand", color=icon_color), "Fit to Window")
         self._ov_fit_action.setToolTip(tooltip_with_shortcut("Fit to Window", "fit_view"))
         self._ov_original_action = overflow_menu.addAction("Original Size (1:1)")
+        self._ov_original_action.setCheckable(True)
         self._ov_original_action.setToolTip(
             tooltip_with_shortcut(
-                "Original size (100%). Displays a lower-resolution preview unless HQ is enabled.",
+                "Original size (100%) — one scan pixel per screen pixel. Below HQ the preview is scaled up to it, "
+                "so the framing is right and the detail is not.",
                 "zoom_100",
             )
         )
@@ -388,6 +394,12 @@ class ActionToolbar(QWidget):
             qta.icon("fa5s.history", color=icon_color), "Reset Settings", self.session.reset_settings
         )
         reset_settings_action.setToolTip("Discard all edits and return this image to its default look")
+        persistent_action = overflow_menu.addAction(
+            qta.icon("fa5s.thumbtack", color=icon_color),
+            tooltip_with_shortcut("Persistent Settings…", "persistent_settings"),
+            self._show_sticky_dialog,
+        )
+        persistent_action.setToolTip("Choose which settings carry onto the next file you open")
         overflow_menu.addSeparator()
         unload_action = overflow_menu.addAction(qta.icon("fa5s.times-circle", color=icon_color), "Unload", self._on_overflow_unload)
         unload_action.setToolTip("Remove this image from the session (its saved edit is kept)")
@@ -712,6 +724,8 @@ class ActionToolbar(QWidget):
         canvas = getattr(self.controller, "canvas", None)
         pct = canvas.current_zoom_percent() if canvas is not None else int(round(max(0.0, zoom) * 100.0))
         self.zoom_label.setText(f"{pct}%")
+        self.btn_zoom_original.setChecked(pct == 100)
+        self._ov_original_action.setChecked(pct == 100)
 
     def _on_fit_clicked(self) -> None:
         canvas = getattr(self.controller, "canvas", None)
@@ -720,8 +734,11 @@ class ActionToolbar(QWidget):
 
     def _on_original_clicked(self) -> None:
         canvas = getattr(self.controller, "canvas", None)
-        if canvas is not None:
-            canvas.zoom_to_original()
+        if canvas is None:
+            # Nothing will emit zoom_changed to correct the click's own toggle.
+            self.btn_zoom_original.setChecked(False)
+            return
+        canvas.zoom_to_original()
 
     def rotate(self, direction: int) -> None:
         from dataclasses import replace
@@ -796,6 +813,11 @@ class ActionToolbar(QWidget):
 
         dlg = ShortcutsOverlay(self.window().shortcut_manager, self.window())
         dlg.exec()
+
+    def _show_sticky_dialog(self) -> None:
+        from negpy.desktop.view.widgets.granular_settings_dialog import open_sticky_dialog
+
+        open_sticky_dialog(self.window(), self.controller)
 
     def _show_database_dialog(self) -> None:
         from negpy.desktop.view.widgets.database_dialog import DatabaseDialog
